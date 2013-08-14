@@ -30,7 +30,7 @@ N_ESTIM = 20
 learning_rate = 1.
 N_SAMPLES = 5000
 N_RUNS = 3
-N_LAB = 49
+N_LAB = 20
 CLF = 'adaboost'#'randomforest' #
 N_FEATURES = 650
 

@@ -219,7 +219,7 @@ def single_view(table_path, settings):
     rich_test_feats = np.concatenate([test_feats, test_CF_feats], axis=1)
 
     print 'Computing confidence for the test and contextual features'
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
     rich_test_feats = big_scaler.transform(rich_test_feats)
     confidence_rich_test = compute_confidence_par(allLearners_rich, rich_test_feats, CLF)
     pred = np.argmax(confidence_rich_test, axis=1)

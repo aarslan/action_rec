@@ -28,11 +28,11 @@ from classifier_wrappers import train_randomforest, train_adaboost, train_adaboo
 
 N_ESTIM = 20
 learning_rate = 1.
-N_SAMPLES = 5000
-N_RUNS = 3
-N_LAB = 20
+N_SAMPLES = 2000
+N_RUNS = 5
+N_LAB = 15
 CLF = 'adaboost'#'randomforest' #
-N_FEATURES = 650
+N_FEATURES = 500
 
 #------------------------------------------------------------------------------#
 
@@ -219,6 +219,7 @@ def single_view(table_path, settings):
     rich_test_feats = np.concatenate([test_feats, test_CF_feats], axis=1)
 
     print 'Computing confidence for the test and contextual features'
+    import ipdb; ipdb.set_trace()
     rich_test_feats = big_scaler.transform(rich_test_feats)
     confidence_rich_test = compute_confidence_par(allLearners_rich, rich_test_feats, CLF)
     pred = np.argmax(confidence_rich_test, axis=1)

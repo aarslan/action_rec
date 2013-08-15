@@ -188,7 +188,7 @@ def single_camera(table_path, settings):
     allLearners_orig, used_labels = train_adaboost(orig_feats,orig_labels,learning_rate, N_LAB, N_RUNS, N_ESTIM, N_SAMPLES)
     #allLearners_orig, used_labels = train_randomforest(orig_feats,orig_labels, N_LAB, N_RUNS, N_ESTIM, Sample_N)
 
-    confidence_orig= compute_confidence_par(allLearners_orig, orig_feats, CLF)
+    confidence_orig= compute_confidence(allLearners_orig, orig_feats, CLF)
 
 
     print 'Getting contextual features'
@@ -207,7 +207,7 @@ def single_camera(table_path, settings):
 
     print 'Computing confidence for the test features'
     test_feats  = small_scaler.transform(test_feats)
-    confidence_test = compute_confidence_par(allLearners_orig, test_feats, CLF)
+    confidence_test = compute_confidence(allLearners_orig, test_feats, CLF)
 
     print 'Getting contextual features'
     #test_CF_35 = get_contextual(confidence_test, 35)
@@ -221,7 +221,7 @@ def single_camera(table_path, settings):
     print 'Computing confidence for the test and contextual features'
     #import ipdb; ipdb.set_trace()
     rich_test_feats = big_scaler.transform(rich_test_feats)
-    confidence_rich_test = compute_confidence_par(allLearners_rich, rich_test_feats, CLF)
+    confidence_rich_test = compute_confidence(allLearners_rich, rich_test_feats, CLF)
     pred = np.argmax(confidence_rich_test, axis=1)
 
     pred_sur = le.inverse_transform(pred)

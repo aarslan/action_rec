@@ -233,11 +233,11 @@ def single_camera(table_path, settings):
     test_acc = np.mean(norm_cm.diagonal())
     print 'the mean across the diagonal is ' + str(test_acc)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(norm_cm, interpolation='nearest')
-    fig.colorbar(cax)
-
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(norm_cm, interpolation='nearest')
+#    fig.colorbar(cax)
+#
 #    ACTIONS = np.unique(test_labels_sur)
 #    ax.set_xticks(range(-1,len(ACTIONS)))
 #    ax.set_yticks(range(-1,len(ACTIONS)))

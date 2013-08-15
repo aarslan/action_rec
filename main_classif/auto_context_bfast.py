@@ -28,7 +28,7 @@ from classifier_wrappers import train_randomforest, train_adaboost, train_adaboo
 
 N_ESTIM = 20
 learning_rate = 1.
-N_SAMPLES = 2000
+N_SAMPLES = 4000
 N_RUNS = 5
 N_LAB = 5
 CLF = 'adaboost'#'randomforest' #
@@ -238,15 +238,15 @@ def single_view(table_path, settings):
     cax = ax.matshow(norm_cm, interpolation='nearest')
     fig.colorbar(cax)
 
-    ACTIONS = np.unique(test_labels_sur)
-    ax.set_xticks(range(-1,len(ACTIONS)))
-    ax.set_yticks(range(-1,len(ACTIONS)))
-    ax.set_xticklabels(['']+list(ACTIONS), rotation='vertical')
-    ax.set_yticklabels(['']+list(ACTIONS))
-    ax.axis('image')
-
-    #plt.show()
-    #import ipdb; ipdb.set_trace()
+#    ACTIONS = np.unique(test_labels_sur)
+#    ax.set_xticks(range(-1,len(ACTIONS)))
+#    ax.set_yticks(range(-1,len(ACTIONS)))
+#    ax.set_xticklabels(['']+list(ACTIONS), rotation='vertical')
+#    ax.set_yticklabels(['']+list(ACTIONS))
+#    ax.axis('image')
+#
+#    #plt.show()
+#    #import ipdb; ipdb.set_trace()
 
     confidence_rich_train = compute_confidence(allLearners_rich, rich_feats, CLF)
     pred_train = np.argmax(confidence_rich_train, axis=1)
@@ -256,20 +256,20 @@ def single_view(table_path, settings):
     train_acc = np.mean(norm_cm.diagonal())
     print 'the mean across the diagonal FOR TRAINING is ' + str(train_acc)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.matshow(norm_cm, interpolation='nearest')
-    fig.colorbar(cax)
-
-    ax.set_xticks(range(-1,len(ACTIONS)))
-    ax.set_yticks(range(-1,len(ACTIONS)))
-    ax.set_xticklabels(['']+list(ACTIONS), rotation='vertical')
-    ax.set_yticklabels(['']+list(ACTIONS))
-    ax.axis('image')
-
-    #plt.show()
-
-    #import ipdb;ipdb.set_trace()
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    cax = ax.matshow(norm_cm, interpolation='nearest')
+#    fig.colorbar(cax)
+#
+#    ax.set_xticks(range(-1,len(ACTIONS)))
+#    ax.set_yticks(range(-1,len(ACTIONS)))
+#    ax.set_xticklabels(['']+list(ACTIONS), rotation='vertical')
+#    ax.set_yticklabels(['']+list(ACTIONS))
+#    ax.axis('image')
+#
+#    #plt.show()
+#
+#    #import ipdb;ipdb.set_trace()
     return test_acc, train_acc, pred, pred_train, test_labels_sur, orig_labels, confidence_rich_test, confidence_rich_train
 
 #------------------------------------------------------------------------------#

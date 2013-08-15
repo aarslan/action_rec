@@ -26,11 +26,11 @@ from confidence_computation import compute_confidence, compute_confidence_par
 from contextual_computation import get_contextual, get_contextual_matlab
 from classifier_wrappers import train_randomforest, train_adaboost, train_adaboost_par
 
-N_ESTIM = 20
+N_ESTIM = 40
 learning_rate = 1.
-N_SAMPLES = 4000
+N_SAMPLES = 5000
 N_RUNS = 5
-N_LAB = 5
+N_LAB = 10
 CLF = 'adaboost'#'randomforest' #
 N_FEATURES = 500
 

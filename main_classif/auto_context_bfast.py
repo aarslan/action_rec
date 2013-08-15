@@ -168,7 +168,7 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
     return features_train , labels_train, features_test, labels_test 
 
 #------------------------------------------------------------------------------#
-def single_view(table_path, settings):
+def single_camera(table_path, settings):
     orig_feats, orig_labels, test_feats, test_labels = get_bfast_splits(
                                                        table_path, settings, 10000,
                                                        N_FEATURES, contig_labels = True,
@@ -310,7 +310,7 @@ def main():
     for cam in cams:
         print 'starting ',cam
         settings['cur_cam'] = cam
-        te_acc[cam], tr_acc[cam], te_pred[cam], tr_pred[cam], te_lab[cam], tr_labels[cam], te_conf[cam], tr_conf[cam] = single_view(table_path, settings)
+        te_acc[cam], tr_acc[cam], te_pred[cam], tr_pred[cam], te_lab[cam], tr_labels[cam], te_conf[cam], tr_conf[cam] = single_camera(table_path, settings)
     results['te_acc']=te_acc
     results['tr_acc']=tr_acc
     results['te_pred'] = te_pred

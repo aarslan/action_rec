@@ -47,7 +47,7 @@ def compute_confidence(allLearners, dada, classifier_type):
             update_progressbar(pbar, ii)
         end_progressbar(pbar)
     
-    if classifier_type == 'randomforest':
+    if classifier_type == 'randomforest' or classifier_type == 'svm':
         #import ipdb;ipdb.set_trace()
         lab_confidence = np.zeros((dada.shape[0],len(allLearners[0].classes_)), dtype='float64')
         pbar = start_progressbar(len(allLearners), '%i producing weighted outputs' % len(allLearners[0].classes_))

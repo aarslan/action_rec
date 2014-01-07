@@ -113,3 +113,26 @@ def train_randomforest(features, labels, n_lab, n_runs, n_estim, n_samples):
         allLearners.append(rfclf.fit(feats, labs))
     
     return allLearners, used_labels
+
+#------------------------------------------------------------------------------#
+
+def train_svm(features, labels, n_lab, n_runs, n_samples):
+    
+    uniqLabels = np.unique(labels)
+    print 'TAKING ONLY ', str(n_lab), ' LABELS FOR SPEED '
+    print "using SVM"
+    uniqLabels = uniqLabels[:n_lab]
+    used_labels = uniqLabels
+    
+    allLearners = []
+    #import ipdb;ipdb.set_trace()
+    for rrr in xrange(n_runs):
+        #import ipdb;ipdb.set_trace()
+        feats,labs = get_multi_sets(features, labels, used_labels, n_samples)
+        #import ipdb;ipdb.set_trace()
+        svmclf = SVC(C=0.001, probability=True)
+        #import ipdb;ipdb.set_trace()
+        allLearners.append(svmclf.fit(feats, labs))
+    
+    return allLearners, used_labels
+

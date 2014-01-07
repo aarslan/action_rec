@@ -57,9 +57,9 @@ def get_multi_sets(features, labels, used_labels, sample_n):
     #sample_n = min(nn)
     cnt = 0
     #import ipdb;ipdb.set_trace()
-    features_train = np.zeros(((sample_n*used_labels.shape[0]), features.shape[1]), dtype = 'float')
+    features_train = np.zeros(((sample_n*used_labels.shape[0]), features.shape[1]), dtype = 'float32')
     for myLab in used_labels:
-        import ipdb;ipdb.set_trace()
+        #import ipdb;ipdb.set_trace()
         all_exemplars = np.where(labels == myLab)[0]
         try:
             selInd = np.random.choice(all_exemplars, sample_n, replace=False)
@@ -77,5 +77,5 @@ def get_multi_sets(features, labels, used_labels, sample_n):
     if labs.shape[0] != feats.shape[0]:
         import ipdb;ipdb.set_trace()
         raise ValueError('the label and feat dimensions in get_multi_set dont match')
-
+    #import ipdb;ipdb.set_trace()
     return feats,labs

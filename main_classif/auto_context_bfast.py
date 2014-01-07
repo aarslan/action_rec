@@ -24,14 +24,14 @@ import os
 ### ALI's TOOLS
 from confidence_computation import compute_confidence, compute_confidence_par
 from contextual_computation import get_contextual, get_contextual_matlab
-from classifier_wrappers import train_randomforest, train_adaboost, train_adaboost_par
+from classifier_wrappers import train_randomforest, train_adaboost, train_adaboost_par, train_svm
 
 N_ESTIM = 40
 learning_rate = 1.
-N_SAMPLES = 5000
+N_SAMPLES = 1000
 N_RUNS = 5
-N_LAB = 10
-CLF = 'adaboost'#'randomforest' #
+N_LAB = 5
+CLF = 'svm' #'adaboost'#'randomforest' #
 N_FEATURES = 500
 
 #------------------------------------------------------------------------------#
@@ -57,7 +57,7 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
     
     h5_all = ta.openFile(table_fname, mode = 'r')
     table_all = h5_all.root.input_output_data.readout
-
+    
     train_p = settings['train_p']
     test_p = settings['test_p']
     cams = settings['cameras']
@@ -73,10 +73,10 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
             lab_per_pat += list(np.unique(rowz))
         lab_per_cam[cam] = np.unique(lab_per_pat)
     #import ipdb; ipdb.set_trace()
-            
+    
     aaa = lab_per_cam.values() #avoiding a possible bug here by making sure we take only the labels that exist for all cams
     labs_for_all = set(aaa[0]).intersection(*aaa) # will use this towards the end to weed out un-shared ones
-
+    
     len_data = 0
     print 'figuring out how many training samples we have for the cam ', cur_cam
     for pat in train_p:
@@ -99,8 +99,8 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
             cnt = cnt+len(temp)
         update_progressbar(pbar, jj)
     end_progressbar(pbar)
-
-
+    
+    
     len_data = 0
     pbar = start_progressbar(len(test_p), ' now figuring out how many test samples we have' )
     for jj,pat in enumerate(test_p):
@@ -108,10 +108,10 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
             len_data += len([row['label'] for row in table_all.readWhere("(partiNames == '%s') & (camNames == '%s')" % (pat, cam)) ])
         update_progressbar(pbar, jj)
     end_progressbar(pbar)
-
+    
     features_test = np.empty((len_data,n_features), dtype='float64')
     labels_test = np.empty(len_data, dtype='|S24')
-
+    
     cnt =0
     pbar2 = start_progressbar(len(test_p), str(len(test_p))+ ' testing participants loading' )
     for jj,pat in enumerate(test_p):
@@ -127,14 +127,14 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
                 cnt = cnt+len(temp)
         update_progressbar(pbar2, jj)
     end_progressbar(pbar2)
-
+    
     tic = time.time()
     uniqLabels = np.intersect1d(labs_for_all, np.unique(labels_test))
     #KILL UNUSED
     uniqLabels = uniqLabels[uniqLabels!='SIL']
     uniqLabels = uniqLabels[:n_lab]
     print 'using ',str(len(uniqLabels)),' labels in total'
-
+    
     labels_train = np.array(labels_train)
     selector = np.zeros_like(labels_train, dtype= 'bool')
     excpt = 0
@@ -152,7 +152,7 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
         selector = np.squeeze(selector|[label_lim])
     labels_train = labels_train[selector]
     features_train = features_train[selector,:n_features]
-
+    
     labels_test = np.array(labels_test)
     selector = np.zeros_like(labels_test, dtype= 'bool')
     for uL in uniqLabels:
@@ -165,11 +165,119 @@ def get_bfast_splits(table_fname, settings, n_samples = N_SAMPLES, n_features = 
     table_all.flush()
     h5_all.close()
     
-    return features_train , labels_train, features_test, labels_test 
+    return features_train , labels_train, features_test, labels_test
+#------------------------------------------------------------------------------#
+def get_bfast_splits_view(table_fname, settings, n_samples = N_SAMPLES, n_features = N_FEATURES, n_lab = N_LAB, contig_labels = True):
+    
+    h5_all = ta.openFile(table_fname, mode = 'r')
+    table_all = h5_all.root.input_output_data.readout
+    
+    train_p = settings['train_p']
+    test_p = settings['test_p']
+    view = settings['views']
+    lab_per_cam = {}
+    
+    print 'figuring out the shared labels between cams'
+
+    lab_per_pat = []
+    for pat in train_p:
+        rowz = [row['label'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        lab_per_pat += list(np.unique(rowz))
+    lab_per_cam = np.unique(lab_per_pat)
+    #import ipdb; ipdb.set_trace()
+    
+    labs_for_all = lab_per_cam
+    
+    len_data = 0
+    print 'figuring out how many training samples we have for the view ', view
+    for pat in train_p:
+        rowz = [row['label'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        len_data += len(rowz)
+    
+    features_train = np.empty((len_data,n_features), dtype='float64')
+    labels_train = np.empty(len_data, dtype='|S24')
+    
+    cnt =0
+    pbar = start_progressbar(len(train_p), str(len(train_p))+ ' training participants loading for view '+ view )
+    for jj,pat in enumerate(train_p):
+        temp = [row['features'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        temp2 =  [row['label'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        temp = [roww[:n_features] for roww in temp]
+        if temp:
+            #features_train[cnt:cnt+len(temp),:] = np.array(temp)[:,:n_features]
+            features_train[cnt:cnt+len(temp),:] = temp
+            labels_train[cnt:cnt+len(temp)] = temp2
+            cnt = cnt+len(temp)
+        update_progressbar(pbar, jj)
+    end_progressbar(pbar)
+    
+    
+    len_data = 0
+    pbar = start_progressbar(len(test_p), ' now figuring out how many test samples we have' )
+    for jj,pat in enumerate(test_p):
+        len_data += len([row['label'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ])
+        update_progressbar(pbar, jj)
+    end_progressbar(pbar)
+    
+    features_test = np.empty((len_data,n_features), dtype='float64')
+    labels_test = np.empty(len_data, dtype='|S24')
+    
+    cnt =0
+    pbar2 = start_progressbar(len(test_p), str(len(test_p))+ ' testing participants loading' )
+    for jj,pat in enumerate(test_p):
+        temp = [row['features'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        temp2 =  [row['label'] for row in table_all.readWhere("(partiNames == '%s') & (viewNames == '%s')" % (pat, view)) ]
+        temp = [roww[:n_features] for roww in temp]
+        if temp:
+            features_test[cnt:cnt+len(temp),:] = temp
+            labels_test[cnt:cnt+len(temp)] = temp2
+            #import ipdb; ipdb.set_trace()
+            cnt = cnt+len(temp)
+        update_progressbar(pbar2, jj)
+    end_progressbar(pbar2)
+    
+    tic = time.time()
+    uniqLabels = np.intersect1d(labs_for_all, np.unique(labels_test))
+    #KILL UNUSED
+    uniqLabels = uniqLabels[uniqLabels!='SIL']
+    uniqLabels = uniqLabels[:n_lab]
+    print 'using ',str(len(uniqLabels)),' labels in total'
+    
+    labels_train = np.array(labels_train)
+    selector = np.zeros_like(labels_train, dtype= 'bool')
+    excpt = 0
+    
+    for uL in uniqLabels:
+        label_all = labels_train == uL
+        label_all_subs = np.where(label_all)[0]
+        if  label_all_subs.shape >= n_samples:
+            label_some_subs = label_all_subs[:n_samples]
+        else:
+            excpt += 1
+            label_some_subs = label_all_subs
+        label_lim = np.zeros_like(label_all,dtype='bool')
+        label_lim[label_some_subs] = True
+        selector = np.squeeze(selector|[label_lim])
+    labels_train = labels_train[selector]
+    features_train = features_train[selector,:n_features]
+    
+    labels_test = np.array(labels_test)
+    selector = np.zeros_like(labels_test, dtype= 'bool')
+    for uL in uniqLabels:
+        selector = np.squeeze(selector|[labels_test == uL])
+    labels_test = labels_test[selector]
+    features_test = features_test[selector,:n_features]
+    print "Loaded features converted in ", round(time.time() - tic) , "seconds"
+    print "there were ", str(excpt), " exceptions "
+    
+    table_all.flush()
+    h5_all.close()
+    
+    return features_train , labels_train, features_test, labels_test
 
 #------------------------------------------------------------------------------#
 def single_camera(table_path, settings):
-    orig_feats, orig_labels, test_feats, test_labels = get_bfast_splits(
+    orig_feats, orig_labels, test_feats, test_labels = get_bfast_splits_view(
                                                        table_path, settings, 10000,
                                                        N_FEATURES, contig_labels = True,
                                                        n_lab = N_LAB)
@@ -185,9 +293,10 @@ def single_camera(table_path, settings):
     #import ipdb; ipdb.set_trace()
 
     print 'FIRST ROUND: training with original features'
-    allLearners_orig, used_labels = train_adaboost(orig_feats,orig_labels,learning_rate, N_LAB, N_RUNS, N_ESTIM, N_SAMPLES)
+    #allLearners_orig, used_labels = train_adaboost(orig_feats,orig_labels,learning_rate, N_LAB, N_RUNS, N_ESTIM, N_SAMPLES)
     #allLearners_orig, used_labels = train_randomforest(orig_feats,orig_labels, N_LAB, N_RUNS, N_ESTIM, Sample_N)
-
+    allLearners_orig, used_labels = train_svm(orig_feats, orig_labels, N_LAB, N_RUNS, N_SAMPLES)
+    #import ipdb; ipdb.set_trace()
     confidence_orig= compute_confidence(allLearners_orig, orig_feats, CLF)
 
 
@@ -203,7 +312,8 @@ def single_camera(table_path, settings):
     #import ipdb; ipdb.set_trace()
     rich_feats = big_scaler.fit_transform(rich_feats)
     print 'SECOND ROUND: training with original and contextual features'
-    allLearners_rich, dumb = train_adaboost(rich_feats, orig_labels, learning_rate, N_LAB, N_RUNS, N_ESTIM, N_SAMPLES)
+    #allLearners_rich, dumb = train_adaboost(rich_feats, orig_labels, learning_rate, N_LAB, N_RUNS, N_ESTIM, N_SAMPLES)
+    allLearners_rich, dumb = train_svm(rich_feats, orig_labels, N_LAB, N_RUNS, N_SAMPLES)
 
     print 'Computing confidence for the test features'
     test_feats  = small_scaler.transform(test_feats)
@@ -219,7 +329,7 @@ def single_camera(table_path, settings):
     rich_test_feats = np.concatenate([test_feats, test_CF_feats], axis=1)
 
     print 'Computing confidence for the test and contextual features'
-    #import ipdb; ipdb.set_trace()
+    import ipdb; ipdb.set_trace()
     rich_test_feats = big_scaler.transform(rich_test_feats)
     confidence_rich_test = compute_confidence(allLearners_rich, rich_test_feats, CLF)
     pred = np.argmax(confidence_rich_test, axis=1)
@@ -277,11 +387,13 @@ def single_camera(table_path, settings):
 def main():
     parser = argparse.ArgumentParser(description="""This file does this and that """)
     parser.add_argument('--table_path', type=str, help="""string""")
+    parser.add_argument('--views', nargs='+', default= 'r')
     parser.add_argument('--cams', type=str, nargs='+', default= 'webcam01')
     parser.add_argument('--out_dir', type=str, default= '/Users/aarslan/Desktop/bfast_ClassifData')
     args = parser.parse_args()
     
     table_path = args.table_path
+    views      = args.views
     out_dir    = args.out_dir
     cams       = args.cams
     
@@ -295,7 +407,9 @@ def main():
         'test_p': [   'P42', 'P43', 'P44', 'P45', 'P46', 'P47', 'P48', 'P49',
                       'P50', 'P51', 'P52', 'P53', 'P54'], #
             
-        'cameras' : cams #, 'webcam02', 'cam01', 'cam02', 'stereo01'
+        'cameras' : cams, #, 'webcam02', 'cam01', 'cam02', 'stereo01'
+            
+        'views': views
                 }
     te_acc   = {}
     tr_acc   = {}
@@ -307,10 +421,14 @@ def main():
     tr_conf  = {}
     results = {}
     
-    for cam in cams:
-        print 'starting ',cam
-        settings['cur_cam'] = cam
-        te_acc[cam], tr_acc[cam], te_pred[cam], tr_pred[cam], te_lab[cam], tr_labels[cam], te_conf[cam], tr_conf[cam] = single_camera(table_path, settings)
+#    for cam in cams:
+#        print 'starting ',cam
+#        settings['cur_cam'] = cam
+#        te_acc[cam], tr_acc[cam], te_pred[cam], tr_pred[cam], te_lab[cam], tr_labels[cam], te_conf[cam], tr_conf[cam] = single_camera(table_path, settings)
+    for view in views:
+        print 'starting ',view
+        settings['view'] = view
+        te_acc[view], tr_acc[view], te_pred[view], tr_pred[view], te_lab[view], tr_labels[view], te_conf[view], tr_conf[view] = single_camera(table_path, settings)
     results['te_acc']=te_acc
     results['tr_acc']=tr_acc
     results['te_pred'] = te_pred

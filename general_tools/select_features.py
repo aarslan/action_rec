@@ -30,6 +30,7 @@ def create_empty_table(table_fname, feature_len):
         camNames     = ta.StringCol(32)
         actNames     = ta.StringCol(64)
         partiNames   = ta.StringCol(4)
+        viewNames   = ta.StringCol(1)
     
     
     h5    = ta.openFile(table_fname, mode = 'w', title='list of images')
@@ -52,7 +53,7 @@ def read_data_files(features_name):
     
     return features
 #------------------------------------------------------------------------------#
-def read_meta_files(labels_fname, camname_fname, actname_fname, partiname_fname):
+def read_meta_files(labels_fname, camname_fname, actname_fname, partiname_fname, viewname_fname):
     
     print "reading participant names"
     tic = time.time()
@@ -77,22 +78,32 @@ def read_meta_files(labels_fname, camname_fname, actname_fname, partiname_fname)
     actNames = np.squeeze(io.loadmat(actname_fname)['myActs'])
     actNames_items = np.squeeze(io.loadmat(actname_fname+'_items')['myActs_items'])
     print "time taken :", time.time() - tic, 'seconds'
+    
+    print "reading view names"
+    tic = time.time()
+    viewNames = np.squeeze(io.loadmat(viewname_fname)['myViews'])
+    viewNames_items = np.squeeze(io.loadmat(viewname_fname+'_items')['myViews_items'])
+    print "time taken :", time.time() - tic, 'seconds'
+    
+    
 
-    return labels, camNames, actNames, partiNames
+    return labels, camNames, actNames, partiNames, viewNames
 #------------------------------------------------------------------------------#
-def read_meta_files_items(labels_fname, camname_fname, actname_fname, partiname_fname):
+def read_meta_files_items(labels_fname, camname_fname, actname_fname, partiname_fname, viewname_fname):
     
     partiNames_items = io.loadmat(partiname_fname+'_items', squeeze_me=True)['myPartis_items']
     labels_items = io.loadmat(labels_fname+'_items', squeeze_me=True)['myLabels_items']
     camNames_items = io.loadmat(camname_fname+'_items', squeeze_me=True)['myCams_items']
     actNames_items = io.loadmat(actname_fname+'_items', squeeze_me=True)['myActs_items']
+    viewNames_items = io.loadmat(viewname_fname+'_items', squeeze_me=True)['myViews_items']
     
     partiNames_items= np.array([str(x) for x in partiNames_items])
     labels_items=np.array([str(x) for x in labels_items])
     camNames_items=np.array([str(x) for x in camNames_items])
     actNames_items=np.array([str(x) for x in actNames_items])
+    viewNames_items=np.array([str(x) for x in viewNames_items])
     
-    return labels_items, camNames_items, actNames_items, partiNames_items
+    return labels_items, camNames_items, actNames_items, partiNames_items, viewNames_items
 #------------------------------------------------------------------------------#
 def feature_selector(features, labels):
     from sklearn.feature_selection import SelectPercentile, SelectKBest, f_classif, RFECV
@@ -104,7 +115,7 @@ def feature_selector(features, labels):
     return selector
 
 #------------------------------------------------------------------------------#
-def populate_table(table_fname, features, labels, camNames, actNames, partiNames):
+def populate_table(table_fname, features, labels, camNames, actNames, partiNames, viewNames):
     
     n_samples = labels.shape[0]
     pbar = start_progressbar(n_samples, '%i features to Pytable' % (n_samples))
@@ -121,6 +132,7 @@ def populate_table(table_fname, features, labels, camNames, actNames, partiNames
         pp['camNames']   = camNames[i]
         pp['actNames']   = actNames[i]
         pp['partiNames'] = partiNames[i]
+        pp['viewNames'] = viewNames[i]
         pp.append()
         update_progressbar(pbar, i)
     
@@ -146,6 +158,7 @@ def main():
     parser.add_argument('--camname_fname', type=str, help="""string""", default = 'myCams')
     parser.add_argument('--actname_fname', type=str, help="""string""", default= 'myActs')
     parser.add_argument('--partiname_fname', type=str, help="""string""", default= 'myPartis')
+    parser.add_argument('--viewname_fname', type=str, help="""string""", default= 'myViews')
     args = parser.parse_args()
     
     data_path = args.data_path
@@ -155,9 +168,10 @@ def main():
     camname_fname = data_path + args.camname_fname
     actname_fname = data_path + args.actname_fname
     partiname_fname = data_path + args.partiname_fname
+    viewname_fname = data_path + args.viewname_fname
     
-    labels, camNames, actNames, partiNames = read_meta_files(labels_fname, camname_fname, actname_fname, partiname_fname)
-    labels_items, camNames_items, actNames_items, partiNames_items = read_meta_files_items(labels_fname, camname_fname, actname_fname, partiname_fname)
+    labels, camNames, actNames, partiNames, viewNames = read_meta_files(labels_fname, camname_fname, actname_fname, partiname_fname, viewname_fname)
+    labels_items, camNames_items, actNames_items, partiNames_items, viewNames_items = read_meta_files_items(labels_fname, camname_fname, actname_fname, partiname_fname, viewname_fname)
     
     selector_path = data_path+'featureSelectors'
     bigselector_fname = data_path+'oldumulan'
@@ -220,10 +234,11 @@ def main():
     partis = partiNames_items[np.int64(partiNames)-1]
     cams   = camNames_items[np.int64(camNames)-1]
     acts   = actNames_items[np.int64(actNames)-1]
+    views = viewNames_items[np.int64(viewNames)-1]
     import ipdb; ipdb.set_trace()
 
     create_empty_table(table_fname, total_len)
-    populate_table(table_fname, stuff, labels, cams, acts, partis)
+    populate_table(table_fname, stuff, labels, cams, acts, partis, views)
     
 
 #------------------------------------------------------------------------------#

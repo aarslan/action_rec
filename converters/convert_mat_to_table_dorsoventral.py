@@ -16,7 +16,7 @@ import h5py
 def create_empty_table(table_fname):
     
     class images(ta.IsDescription):
-        features     = ta.Float64Col(shape = (930))
+        features     = ta.Float64Col(shape = (1196))
         actions        = ta.StringCol(64)
 	names        = ta.StringCol(64)
 
